@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardioScan — AI ECG Digitization</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #F2F2F7;
+  --surface:  #FFFFFF;
+  --surface2: #F9F9FB;
+  --border:   rgba(0,0,0,0.08);
+  --border2:  rgba(0,0,0,0.05);
+  --red:      #FF3B30;
+  --red-soft: rgba(255,59,48,0.10);
+  --green:    #30D158;
+  --green-soft:rgba(48,209,88,0.10);
+  --blue:     #007AFF;
+  --blue-soft: rgba(0,122,255,0.10);
+  --orange:   #FF9500;
+  --orange-soft:rgba(255,149,0,0.10);
+  --purple:   #AF52DE;
+  --text:     #1C1C1E;
+  --text2:    #3A3A3C;
+  --text3:    #6D6D70;
+  --text4:    #AEAEB2;
+  --sans:     'DM Sans', sans-serif;
+  --serif:    'DM Serif Display', serif;
+  --radius:   16px;
+  --radius-sm:10px;
+  --radius-lg:24px;
+  --shadow:   0 2px 20px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+  --shadow-lg:0 8px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── nav ── */
+nav{
+  background:rgba(255,255,255,0.85);
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+  padding:0 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:60px;
+}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#FF3B30,#FF6B6B);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:#fff;
+  box-shadow:0 2px 8px rgba(255,59,48,0.35);
+}
+.nav-name{font-size:17px;font-weight:600;color:var(--text);letter-spacing:-0.3px}
+.nav-name span{color:var(--red)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.api-pill{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:100px;
+  padding:6px 14px 6px 10px;
+}
+.api-pill label{font-size:11px;font-weight:500;color:var(--text3);white-space:nowrap}
+.api-pill input{
+  border:none;outline:none;background:transparent;
+  font-family:var(--sans);font-size:12px;color:var(--blue);
+  width:220px;font-weight:500;
+}
+.api-pill input::placeholder{color:var(--text4)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text4);flex-shrink:0;transition:all 0.3s}
+.status-dot.on{background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+
+/* ── hero ── */
+.hero{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:72px 40px 60px;
+  text-align:center;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(255,59,48,0.06) 0%, transparent 70%);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--red-soft);
+  border:1px solid rgba(255,59,48,0.2);
+  border-radius:100px;padding:5px 14px;
+  font-size:12px;font-weight:600;color:var(--red);
+  margin-bottom:28px;letter-spacing:0.2px;
+}
+.hero-badge svg{width:14px;height:14px}
+.hero h1{
+  font-family:var(--serif);
+  font-size:56px;line-height:1.08;
+  letter-spacing:-1.5px;
+  color:var(--text);
+  max-width:700px;margin:0 auto 20px;
+}
+.hero h1 em{font-style:italic;color:var(--red)}
+.hero p{
+  font-size:18px;color:var(--text3);
+  max-width:520px;margin:0 auto 48px;
+  line-height:1.6;font-weight:400;
+}
+.hero-features{
+  display:flex;justify-content:center;gap:12px;
+  flex-wrap:wrap;margin-bottom:48px;
+}
+.hero-feat{
+  display:flex;align-items:center;gap:7px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:100px;
+  padding:8px 16px;
+  font-size:13px;font-weight:500;color:var(--text2);
+}
+.feat-dot{width:8px;height:8px;border-radius:50%}
+
+/* ── upload card ── */
+.upload-card{
+  background:var(--surface);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);
+  max-width:760px;margin:0 auto;
+  overflow:hidden;
+}
+.upload-zone{
+  border:2px dashed var(--border);
+  border-radius:var(--radius);
+  margin:24px;
+  min-height:220px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.25s;
+  background:var(--surface2);
+  position:relative;overflow:hidden;
+}
+.upload-zone:hover,.upload-zone.dragover{
+  border-color:var(--red);
+  background:var(--red-soft);
+}
+.upload-zone.has-image{border-style:solid;border-color:var(--border)}
+.upload-icon-wrap{
+  width:56px;height:56px;border-radius:16px;
+  background:var(--red-soft);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:14px;transition:transform 0.2s;
+}
+.upload-zone:hover .upload-icon-wrap{transform:scale(1.08)}
+.upload-icon-wrap svg{width:26px;height:26px;color:var(--red)}
+.upload-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.upload-sub{font-size:13px;color:var(--text3)}
+.preview-img{max-width:100%;max-height:240px;object-fit:contain;display:none;border-radius:8px}
+#fileInput{display:none}
+
+.upload-footer{
+  padding:16px 24px 20px;
+  border-top:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);
+}
+.meta-chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{
+  display:flex;align-items:center;gap:5px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:100px;padding:4px 10px;
+  font-size:12px;font-weight:500;color:var(--text3);
+}
+.chip-val{color:var(--text2);font-weight:600}
+.btn-analyze{
+  background:var(--red);color:#fff;
+  border:none;border-radius:100px;
+  padding:12px 28px;font-family:var(--sans);
+  font-size:14px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;gap:8px;
+  box-shadow:0 4px 14px rgba(255,59,48,0.35);
+  white-space:nowrap;
+}
+.btn-analyze:hover:not(:disabled){
+  background:#e62e24;transform:translateY(-1px);
+  box-shadow:0 6px 20px rgba(255,59,48,0.4);
+}
+.btn-analyze:disabled{background:var(--text4);box-shadow:none;cursor:not-allowed;transform:none}
+.btn-analyze.loading{position:relative;overflow:hidden}
+.btn-analyze.loading::after{
+  content:'';position:absolute;bottom:0;left:0;
+  height:3px;background:rgba(255,255,255,0.5);
+  animation:btn-progress 1.6s infinite;
+}
+@keyframes btn-progress{0%{width:0;left:0}60%{width:60%}100%{width:0;left:100%}}
+
+/* ── main content ── */
+main{max-width:1320px;margin:0 auto;padding:48px 40px}
+
+/* ── section header ── */
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px}
+.sec-title{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-0.4px}
+.sec-sub{font-size:13px;color:var(--text3);font-weight:400}
+.section{margin-bottom:44px;display:none}
+.section.visible{display:block}
+
+/* animate in */
+.fade-in{opacity:0;transform:translateY(20px);animation:fadeUp 0.5s ease forwards}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+
+/* ── steps ── */
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.step-card{
+  background:var(--surface);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden;
+  opacity:0;transform:translateY(16px);
+  transition:opacity 0.45s,transform 0.45s,box-shadow 0.2s;
+  cursor:pointer;
+}
+.step-card.visible{opacity:1;transform:translateY(0)}
+.step-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+.step-card.visible:hover{transform:translateY(-2px)}
+.step-img-wrap{position:relative;aspect-ratio:16/10;overflow:hidden;background:#000}
+.step-img{width:100%;height:100%;object-fit:contain;display:block;transition:transform 0.3s}
+.step-card:hover .step-img{transform:scale(1.03)}
+.step-badge{
+  position:absolute;top:10px;left:10px;
+  background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);
+  color:#fff;font-size:10px;font-weight:700;
+  padding:3px 9px;border-radius:100px;letter-spacing:0.3px;
+}
+.step-expand-hint{
+  position:absolute;top:10px;right:10px;
+  background:rgba(0,0,0,0.45);backdrop-filter:blur(8px);
+  color:#fff;font-size:10px;font-weight:600;
+  padding:3px 9px;border-radius:100px;
+  opacity:0;transition:opacity 0.2s;
+}
+.step-card:hover .step-expand-hint{opacity:1}
+.step-body{padding:14px 16px 16px}
+.step-num{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:0.5px;margin-bottom:4px}
+.step-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.step-desc{font-size:12px;color:var(--text3);line-height:1.55}
+
+/* ── step lightbox ── */
+.step-lightbox{
+  position:fixed;inset:0;z-index:300;
+  display:none;align-items:center;justify-content:center;
+  padding:24px;
+  background:rgba(0,0,0,0.75);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+.step-lightbox.active{display:flex}
+.step-lb-sheet{
+  background:var(--surface);
+  border-radius:var(--radius-lg);
+  box-shadow:0 32px 80px rgba(0,0,0,0.3);
+  width:100%;max-width:960px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  height:min(88vh, 680px);
+}
+.step-lb-header{
+  padding:16px 20px;
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.step-lb-meta{display:flex;align-items:center;gap:12px}
+.step-lb-badge{
+  background:var(--red-soft);color:var(--red);
+  font-size:11px;font-weight:700;
+  padding:4px 11px;border-radius:100px;letter-spacing:0.5px;
+}
+.step-lb-title{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+.step-lb-nav{display:flex;align-items:center;gap:8px}
+.step-lb-img-wrap{
+  flex:1;overflow:hidden;
+  background:#0a0a0a;
+  position:relative;
+  min-height:0;
+}
+.step-lb-img{
+  width:100%;height:100%;
+  object-fit:contain;display:block;
+  transition:transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s;
+}
+.step-lb-img.slide-out-left{ transform:translateX(-60px); opacity:0; }
+.step-lb-img.slide-out-right{ transform:translateX(60px); opacity:0; }
+.step-lb-img.slide-in-left{ transform:translateX(60px); opacity:0; }
+.step-lb-img.slide-in-right{ transform:translateX(-60px); opacity:0; }
+.step-lb-img.slide-active{ transform:translateX(0); opacity:1; }
+.step-lb-body{
+  padding:14px 20px 16px;
+  border-top:1px solid var(--border2);
+  flex-shrink:0;
+}
+.step-lb-desc{font-size:15px;color:var(--text2);line-height:1.65;font-weight:400}
+.step-lb-dots{
+  display:flex;gap:6px;margin-top:10px;
+}
+.step-lb-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--border);transition:all 0.2s;cursor:pointer;
+}
+.step-lb-dot.active{background:var(--red);width:18px;border-radius:100px;}
+
+/* ── extraction panel ── */
+.extraction-panel{
+  display:none;
+  flex-direction:column;
+  height:100%;
+}
+.extraction-panel.active{ display:flex; }
+.extraction-toolbar{
+  padding:10px 20px;
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.extraction-toolbar p{font-size:12px;color:var(--text3);flex:1}
+.btn-back{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:100px;padding:6px 14px;
+  font-family:var(--sans);font-size:12px;font-weight:600;color:var(--text2);
+  cursor:pointer;transition:all 0.15s;
+}
+.btn-back:hover{background:var(--bg)}
+.btn-replay{
+  background:var(--red-soft);border:1px solid rgba(255,59,48,0.2);
+  border-radius:100px;padding:6px 14px;
+  font-family:var(--sans);font-size:12px;font-weight:600;color:var(--red);
+  cursor:pointer;transition:all 0.15s;
+}
+.btn-replay:hover{background:rgba(255,59,48,0.18)}
+.extraction-body{
+  flex:1;display:grid;grid-template-columns:1fr 1fr;
+  gap:0;overflow:hidden;min-height:0;
+}
+.extraction-left{
+  position:relative;overflow:hidden;background:#0a0a0a;
+  border-right:1px solid var(--border2);
+}
+.extraction-left img{
+  width:100%;height:100%;object-fit:contain;display:block;
+}
+.extraction-canvas{
+  position:absolute;inset:0;pointer-events:none;
+}
+.extraction-right{
+  background:var(--surface2);
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);
+  gap:6px;padding:10px;overflow:hidden;
+}
+.extr-lead-card{
+  background:var(--surface);border-radius:8px;
+  overflow:hidden;
+  opacity:0;transform:translateX(-18px) scale(0.95);
+  transition:opacity 0.35s cubic-bezier(0.34,1.56,0.64,1), transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  display:flex;flex-direction:column;
+}
+.extr-lead-card.show{opacity:1;transform:translateX(0) scale(1);}
+.extr-lead-name{
+  font-size:10px;font-weight:700;padding:4px 6px 2px;
+  letter-spacing:0.3px;
+}
+.extr-canvas-wrap{flex:1;background:#0A1628;min-height:0}
+.extr-canvas{display:block;width:100%;height:100%}
+
+/* ── compare ── */
+.compare-outer{
+  background:var(--surface);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden;
+}
+.compare-header{padding:16px 20px;border-bottom:1px solid var(--border2)}
+.compare-header p{font-size:12px;color:var(--text3);margin-top:2px}
+.compare-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio:4/3;
+  background:#111;
+  overflow:hidden;
+  cursor:ew-resize;
+  touch-action:none;
+}
+.compare-wrap canvas{
+  display:block;
+  position:absolute;
+  inset:0;
+  width:100% !important;
+  height:100% !important;
+  cursor:ew-resize;
+  touch-action:none;
+  user-select:none;
+}
+.compare-label{
+  position:absolute;bottom:12px;
+  font-size:11px;font-weight:600;letter-spacing:0.5px;
+  padding:4px 10px;border-radius:100px;
+}
+.compare-label.left{left:12px;background:rgba(0,0,0,0.55);color:#fff;backdrop-filter:blur(6px)}
+.compare-label.right{right:12px;background:rgba(255,255,255,0.9);color:var(--text2)}
+
+/* ── metrics ── */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.metric-card{
+  background:var(--surface);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:20px 22px;
+  transition:box-shadow 0.2s;
+}
+.metric-card:hover{box-shadow:var(--shadow-lg)}
+.metric-icon{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;margin-bottom:14px;
+}
+.metric-label{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:6px}
+.metric-value{font-size:34px;font-weight:700;line-height:1;letter-spacing:-1px;color:var(--text)}
+.metric-unit{font-size:14px;font-weight:400;color:var(--text3);margin-left:3px}
+.metric-bar{margin-top:14px;height:4px;background:var(--bg);border-radius:100px;overflow:hidden}
+.metric-bar-fill{height:100%;border-radius:100px;width:0;transition:width 1.2s cubic-bezier(0.4,0,0.2,1)}
+
+/* ── waveform grid ── */
+.waveform-grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px;padding-bottom:4px}
+.waveform-grid-wrap::-webkit-scrollbar{height:4px}
+.waveform-grid-wrap::-webkit-scrollbar-track{background:transparent}
+.waveform-grid-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.waveform-grid{display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));gap:12px;min-width:840px}
+.lead-card{
+  background:var(--surface);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden;
+  cursor:pointer;transition:all 0.2s;
+}
+.lead-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+.lead-header{padding:10px 14px 6px;display:flex;align-items:center;justify-content:space-between}
+.lead-name{font-size:13px;font-weight:700;color:var(--text)}
+.lead-expand{font-size:11px;color:var(--text4);font-weight:500;opacity:0;transition:opacity 0.2s}
+.lead-card:hover .lead-expand{opacity:1;color:var(--blue)}
+.lead-canvas-wrap{background:#0A1628;padding:4px 8px 8px}
+.lead-canvas{display:block;width:100%}
+
+.rhythm-card{
+  background:var(--surface);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden;cursor:pointer;
+  transition:box-shadow 0.2s;
+  max-width:100%;
+}
+.rhythm-card:hover{box-shadow:var(--shadow-lg)}
+.rhythm-header{padding:12px 16px 6px;display:flex;align-items:center;justify-content:space-between}
+.rhythm-title{font-size:13px;font-weight:700;color:var(--text)}
+.rhythm-sub{font-size:11px;color:var(--text4)}
+.rhythm-canvas-wrap{background:#0A1628;padding:4px 8px 8px;overflow:hidden}
+.rhythm-canvas{display:block;width:100%;height:68px;max-height:68px}
+
+/* ── download ── */
+.dl-card{
+  background:var(--surface);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:24px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.dl-info h3{font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px}
+.dl-info p{font-size:13px;color:var(--text3)}
+.dl-buttons{display:flex;gap:10px}
+.btn-dl{
+  display:flex;align-items:center;gap:7px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:100px;padding:9px 18px;
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  color:var(--text2);cursor:pointer;transition:all 0.2s;
+}
+.btn-dl:hover{background:var(--blue);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(0,122,255,0.3)}
+.btn-dl svg{width:14px;height:14px}
+
+/* ═════════════════════════════
+   MODAL
+   ═════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.4);
+  backdrop-filter:blur(12px);
+  z-index:200;
+  display:none;align-items:center;justify-content:center;
+  padding:20px;
+}
+.modal-overlay.active{display:flex}
+.modal-sheet{
+  background:var(--surface);
+  border-radius:var(--radius-lg);
+  box-shadow:0 24px 80px rgba(0,0,0,0.25);
+  width:100%;max-width:1200px;
+  height:min(90vh,700px);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.modal-nav{
+  padding:16px 20px;
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;background:var(--surface);
+}
+.modal-lead-pill{
+  display:flex;align-items:center;gap:10px;
+}
+.modal-lead-badge{
+  width:40px;height:40px;border-radius:12px;
+  background:var(--red-soft);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:var(--red);
+}
+.modal-lead-name{font-size:20px;font-weight:700;letter-spacing:-0.4px;color:var(--text)}
+.modal-lead-desc{font-size:12px;color:var(--text3);margin-top:1px}
+.modal-nav-btns{display:flex;align-items:center;gap:8px}
+.btn-nav{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:100px;padding:7px 16px;
+  font-family:var(--sans);font-size:13px;font-weight:500;
+  color:var(--text2);cursor:pointer;transition:all 0.15s;
+}
+.btn-nav:hover{background:var(--bg);border-color:rgba(0,0,0,0.15)}
+.btn-close{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--surface2);border:1px solid var(--border);
+  cursor:pointer;font-size:16px;color:var(--text3);
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;
+}
+.btn-close:hover{background:var(--red-soft);color:var(--red);border-color:rgba(255,59,48,0.2)}
+
+.modal-body{flex:1;display:grid;grid-template-columns:1fr 300px;overflow:hidden;min-height:0}
+
+/* canvas pane */
+.modal-canvas-pane{
+  display:flex;flex-direction:column;padding:16px 20px;
+  border-right:1px solid var(--border2);overflow:hidden;
+}
+.canvas-toolbar{
+  display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-shrink:0;
+}
+.toolbar-label{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:0.4px;text-transform:uppercase}
+.zoom-btn{
+  width:28px;height:28px;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--border);
+  font-size:15px;cursor:pointer;color:var(--text2);
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;
+}
+.zoom-btn:hover{background:var(--blue-soft);color:var(--blue);border-color:rgba(0,122,255,0.2)}
+.zoom-val{
+  font-size:12px;font-weight:600;color:var(--blue);
+  background:var(--blue-soft);border-radius:6px;padding:3px 8px;min-width:32px;text-align:center;
+}
+.canvas-hint{margin-left:auto;font-size:11px;color:var(--text4)}
+.cursor-time{font-size:11px;font-weight:600;color:var(--text3)}
+.modal-canvas-wrap{
+  flex:1;border-radius:var(--radius-sm);overflow:hidden;
+  background:#0A1628;cursor:grab;position:relative;min-height:0;
+  touch-action:none;
+}
+.modal-canvas-wrap.grabbing{cursor:grabbing}
+#modalCanvas{display:block;width:100%;height:100%}
+.time-axis{display:flex;justify-content:space-between;padding:6px 0 0;flex-shrink:0}
+.time-tick{font-size:10px;color:var(--text4);font-weight:500}
+
+/* right panel */
+.modal-panel{overflow-y:auto;padding:20px 18px;display:flex;flex-direction:column;gap:18px}
+.panel-card{background:var(--surface2);border-radius:var(--radius-sm);padding:16px}
+.panel-card-title{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
+.stat-row+.stat-row{border-top:1px solid var(--border2)}
+.stat-key{font-size:12px;color:var(--text3);font-weight:500}
+.stat-val-wrap{display:flex;align-items:center;gap:6px}
+.stat-val{font-size:13px;font-weight:700;color:var(--text)}
+.stat-unit{font-size:11px;color:var(--text3)}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;letter-spacing:0.3px}
+.badge-normal{background:var(--green-soft);color:var(--green)}
+.badge-warn{background:var(--orange-soft);color:var(--orange)}
+.badge-alert{background:var(--red-soft);color:var(--red)}
+
+/* annotation legend */
+.legend-row{display:flex;align-items:center;gap:8px;padding:4px 0}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-text{font-size:11px;color:var(--text3);font-weight:500}
+
+/* mini strip */
+.mini-wrap{position:relative;border-radius:8px;overflow:hidden;height:54px}
+.mini-wrap canvas{display:block;width:100%;height:54px}
+.mini-vp{position:absolute;top:0;height:100%;background:rgba(0,122,255,0.15);border-left:2px solid var(--blue);border-right:2px solid var(--blue);pointer-events:auto;cursor:grab;touch-action:none}
+.mini-hint{font-size:10px;color:var(--text4);margin-top:5px;font-weight:500}
+
+.clinical-text{font-size:12px;color:var(--text3);line-height:1.7}
+
+/* ── loading ── */
+.loading-overlay{position:fixed;inset:0;background:rgba(242,242,247,0.94);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(20px)}
+.loading-overlay.active{display:flex}
+.loading-heart-dot{
+  font-size:48px;line-height:1;
+  margin-bottom:20px;
+  animation:heartpulse 0.9s ease-in-out infinite;
+  filter:drop-shadow(0 0 8px rgba(255,59,48,0.45));
+}
+@keyframes heartpulse{
+  0%,100%{transform:scale(1)}
+  30%{transform:scale(1.22)}
+  60%{transform:scale(0.95)}
+}
+.loading-ecg-wrap{position:relative;width:260px;height:50px;margin-bottom:28px}
+.loading-ecg-wrap svg{width:260px;height:50px;display:block}
+.loading-path{
+  stroke-dasharray:700;stroke-dashoffset:700;
+  animation:draw-ecg 1.8s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+@keyframes draw-ecg{
+  0%  {stroke-dashoffset:700;opacity:1}
+  75% {stroke-dashoffset:0;opacity:1}
+  100%{stroke-dashoffset:0;opacity:0}
+}
+.loading-title{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-0.4px;margin-bottom:8px}
+.loading-sub{font-size:14px;color:var(--text3);font-weight:400}
+.loading-sub span{animation:blink 1.1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
+
+/* ── toast ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--text);color:#fff;padding:10px 20px;border-radius:100px;font-size:13px;font-weight:500;opacity:0;transition:all 0.3s;z-index:600;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:#1C1C1E}
+.toast.err{background:var(--red)}
+
+@media(max-width:1100px){.steps-grid,.metrics-grid{grid-template-columns:repeat(2,1fr)}.modal-body{grid-template-columns:1fr}.modal-panel{display:none}}
+@media(max-width:700px){.hero h1{font-size:36px}.hero-features{display:none}.nav{padding:0 20px}.steps-grid,.metrics-grid{grid-template-columns:1fr}.dl-card{flex-direction:column;gap:16px}}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-heart-dot">❤️</div>
+  <div class="loading-ecg-wrap">
+    <svg viewBox="0 0 260 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polyline class="loading-path"
+        points="0,25 40,25 52,6 62,44 72,2 82,42 94,25 260,25"
+        stroke="#FF3B30" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="loading-title">Analyzing ECG</div>
+  <div class="loading-sub" id="loadingStage">Running AI pipeline<span>...</span></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Step Lightbox -->
+<div class="step-lightbox" id="stepLightbox" onclick="handleStepOverlay(event)">
+  <div class="step-lb-sheet">
+    <div class="step-lb-header">
+      <div class="step-lb-meta">
+        <div class="step-lb-badge" id="lbBadge">Stage 1</div>
+        <div class="step-lb-title" id="lbTitle">—</div>
+      </div>
+      <div class="step-lb-nav">
+        <button class="btn-nav" onclick="stepLbNav(-1)">← Prev</button>
+        <button class="btn-nav" onclick="stepLbNav(1)">Next →</button>
+        <button class="btn-close" onclick="closeStepLb()">✕</button>
+      </div>
+    </div>
+
+    <!-- normal view -->
+    <div id="lbNormalView" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+      <div class="step-lb-img-wrap">
+        <img class="step-lb-img slide-active" id="lbImg" src="" alt="">
+      </div>
+      <div class="step-lb-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div class="step-lb-desc" id="lbDesc">—</div>
+          <button class="btn-replay" id="btnShowExtract" style="display:none;white-space:nowrap" onclick="showExtractionPanel()">
+            ✦ Show Extraction
+          </button>
+        </div>
+        <div class="step-lb-dots" id="lbDots"></div>
+      </div>
+    </div>
+
+    <!-- extraction view -->
+    <div class="extraction-panel" id="extractionPanel">
+      <div class="extraction-toolbar">
+        <p>Watch the AI isolate each of the 12 leads from the raw image — one by one.</p>
+        <button class="btn-back" onclick="hideExtractionPanel()">← Back</button>
+        <button class="btn-replay" id="btnReplay" onclick="runExtractionAnim()">↺ Replay</button>
+      </div>
+      <div class="extraction-body">
+        <div class="extraction-left" id="extractLeft">
+          <img id="extractBaseImg" src="" alt="">
+          <canvas class="extraction-canvas" id="extractCanvas"></canvas>
+        </div>
+        <div class="extraction-right" id="extractRight"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Lead Detail Modal -->
+<div class="modal-overlay" id="modal" onclick="handleOverlayClick(event)">
+  <div class="modal-sheet">
+    <div class="modal-nav">
+      <div class="modal-lead-pill">
+        <div class="modal-lead-badge" id="modalBadge">I</div>
+        <div>
+          <div class="modal-lead-name" id="modalLeadName">Lead I</div>
+          <div class="modal-lead-desc" id="modalLeadDesc">—</div>
+        </div>
+      </div>
+      <div class="modal-nav-btns">
+        <button class="btn-nav" onclick="prevLead()">← Prev</button>
+        <button class="btn-nav" onclick="nextLead()">Next →</button>
+        <button class="btn-close" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-canvas-pane">
+        <div class="canvas-toolbar">
+          <span class="toolbar-label">Zoom</span>
+          <button class="zoom-btn" onclick="zoom(-1)">−</button>
+          <span class="zoom-val" id="zoomLevel">1×</span>
+          <button class="zoom-btn" onclick="zoom(1)">+</button>
+          <span style="width:1px;height:16px;background:var(--border);margin:0 4px"></span>
+          <span class="canvas-hint">Scroll to zoom · Drag to pan</span>
+          <span class="cursor-time" id="cursorInfo" style="margin-left:auto"></span>
+        </div>
+        <div class="modal-canvas-wrap" id="modalCanvasWrap">
+          <canvas id="modalCanvas"></canvas>
+        </div>
+        <div class="time-axis" id="axisX"></div>
+      </div>
+      <div class="modal-panel">
+        <div class="panel-card">
+          <div class="panel-card-title">Measurements</div>
+          <div class="stat-row"><span class="stat-key">Max Amplitude</span><div class="stat-val-wrap"><span class="stat-val" id="statMax">—</span><span class="stat-unit">mV</span></div></div>
+          <div class="stat-row"><span class="stat-key">Min Amplitude</span><div class="stat-val-wrap"><span class="stat-val" id="statMin">—</span><span class="stat-unit">mV</span></div></div>
+          <div class="stat-row"><span class="stat-key">Baseline</span><div class="stat-val-wrap"><span class="stat-val" id="statBase">—</span><span class="stat-unit">mV</span></div></div>
+          <div class="stat-row"><span class="stat-key">Duration</span><div class="stat-val-wrap"><span class="stat-val" id="statDur">—</span><span class="stat-unit">s</span></div></div>
+          <div class="stat-row"><span class="stat-key">Samples</span><div class="stat-val-wrap"><span class="stat-val" id="statSamples">—</span></div></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-card-title">Rhythm Analysis</div>
+          <div class="stat-row"><span class="stat-key">Heart Rate</span><div class="stat-val-wrap"><span class="stat-val" id="statHR">—</span><span class="stat-unit">bpm</span><span class="badge badge-normal" id="badgeHR">Normal</span></div></div>
+          <div class="stat-row"><span class="stat-key">Mean RR</span><div class="stat-val-wrap"><span class="stat-val" id="statRR">—</span><span class="stat-unit">ms</span></div></div>
+          <div class="stat-row"><span class="stat-key">RR Variability</span><div class="stat-val-wrap"><span class="stat-val" id="statRRV">—</span><span class="stat-unit">ms</span></div></div>
+          <div class="stat-row"><span class="stat-key">R-Peaks</span><div class="stat-val-wrap"><span class="stat-val" id="statPeaks">—</span></div></div>
+          <div class="stat-row"><span class="stat-key">QRS Width</span><div class="stat-val-wrap"><span class="stat-val" id="statQRS">—</span><span class="stat-unit">ms</span><span class="badge badge-normal" id="badgeQRS">Normal</span></div></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-card-title">Annotations</div>
+          <div class="legend-row"><div class="legend-dot" style="background:#FF3B30"></div><span class="legend-text">R-Peak (QRS complex)</span></div>
+          <div class="legend-row"><div class="legend-dot" style="background:#FF9500"></div><span class="legend-text">P-Wave region</span></div>
+          <div class="legend-row"><div class="legend-dot" style="background:rgba(255,255,255,0.15)"></div><span class="legend-text">ECG grid background</span></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-card-title">Overview</div>
+          <div class="mini-wrap" id="miniWrap"><canvas id="miniCanvas"></canvas><div class="mini-vp" id="miniViewport"></div></div>
+          <div class="mini-hint">Drag blue region to scrub</div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-card-title">Clinical Context</div>
+          <div class="clinical-text" id="clinicalNote">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">♡</div>
+    <div class="nav-name">Cardio<span>Scan</span></div>
+  </div>
+  <div class="nav-right">
+    <div class="api-pill">
+      <label>Backend</label>
+      <input id="apiUrl" type="text" placeholder="https://xxxx.ngrok.io">
+      <div class="status-dot" id="apiDot"></div>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    AI-Powered ECG Digitization
+  </div>
+  <h1>Digitize your ECG.<br><em>Seamlessly.</em></h1>
+  <p>Convert static images into structured time-series data. Upload a scanned 12-lead ECG, and our pipeline instantly reconstructs the digital waveforms, extracts baseline clinical metrics, and exports clean data for EHR integration.</p>
+  <div class="hero-features">
+    <div class="hero-feat"><span class="feat-dot" style="background:var(--red)"></span>12-Lead Reconstruction</div>
+    <div class="hero-feat"><span class="feat-dot" style="background:var(--blue)"></span>Rotation &amp; Perspective Correction</div>
+    <div class="hero-feat"><span class="feat-dot" style="background:var(--green)"></span>Clinical Metrics Auto-Computed</div>
+    <div class="hero-feat"><span class="feat-dot" style="background:var(--orange)"></span>Export CSV / JSON</div>
+    <div class="hero-feat"><span class="feat-dot" style="background:var(--purple)"></span>Interactive Waveform Analysis</div>
+  </div>
+
+  <div class="upload-card">
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/*">
+      <div class="upload-icon-wrap" id="uploadIconWrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <div class="upload-title" id="uploadTitle">Drop your ECG image here</div>
+      <div class="upload-sub">or click to browse · PNG, JPG, PDF scans welcome</div>
+      <img class="preview-img" id="previewImg" alt="preview">
+    </div>
+    <div class="upload-footer">
+      <div class="meta-chips">
+        <div class="chip">File: <span class="chip-val" id="metaName">—</span></div>
+        <div class="chip">Size: <span class="chip-val" id="metaSize">—</span></div>
+        <div class="chip">Res: <span class="chip-val" id="metaRes">—</span></div>
+        <div class="chip">Status: <span class="chip-val" id="metaStatus">Waiting</span></div>
+      </div>
+      <button class="btn-analyze" id="btnAnalyze" disabled onclick="runAnalysis()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Analyze ECG
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Results -->
+<main>
+
+  <!-- Steps -->
+  <div class="section" id="stepsSection">
+    <div class="sec-head">
+      <div class="sec-title">Processing Pipeline</div>
+      <div class="sec-sub">6-stage AI reconstruction</div>
+    </div>
+    <div class="steps-grid" id="stepsGrid"></div>
+  </div>
+
+  <!-- Compare -->
+  <div class="section" id="compareSection">
+    <div class="sec-head">
+      <div class="sec-title">Before vs After</div>
+      <div class="sec-sub">Drag the handle to compare</div>
+    </div>
+    <div class="compare-outer">
+      <div class="compare-wrap" id="compareWrap">
+        <canvas id="compareCanvas" style="display:block;width:100%;touch-action:none;cursor:ew-resize;user-select:none"></canvas>
+        <div class="compare-label left">Original</div>
+        <div class="compare-label right">Processed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metrics -->
+  <div class="section" id="metricsSection">
+    <div class="sec-head">
+      <div class="sec-title">Clinical Metrics</div>
+      <div class="sec-sub">Auto-computed from digitized signal</div>
+    </div>
+    <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:var(--red-soft);font-size:20px">❤️</div>
+        <div class="metric-label">Heart Rate</div>
+        <div><span class="metric-value" id="metHR">—</span><span class="metric-unit">bpm</span></div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="barHR" style="background:var(--red)"></div></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon" style="background:var(--blue-soft);font-size:20px">⏱</div>
+        <div class="metric-label">RR Interval</div>
+        <div><span class="metric-value" id="metRR">—</span><span class="metric-unit">ms</span></div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="barRR" style="background:var(--blue)"></div></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon" style="background:var(--orange-soft);font-size:20px">📊</div>
+        <div class="metric-label">QRS Duration</div>
+        <div><span class="metric-value" id="metQRS">—</span><span class="metric-unit">ms</span></div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="barQRS" style="background:var(--orange)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Waveforms -->
+  <div class="section" id="waveformSection">
+    <div class="sec-head">
+      <div class="sec-title">12-Lead ECG Output</div>
+      <div class="sec-sub">Click any lead for detailed analysis</div>
+    </div>
+    <div class="waveform-grid-wrap"><div class="waveform-grid" id="waveformGrid"></div></div>
+    <div class="rhythm-card" onclick="openModal('II')">
+      <div class="rhythm-header">
+        <div class="rhythm-title">Rhythm Strip — Lead II</div>
+        <div class="rhythm-sub">Tap to expand ↗</div>
+      </div>
+      <div class="rhythm-canvas-wrap">
+        <canvas class="rhythm-canvas" id="rhythmCanvas" height="68" style="height:68px"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Download -->
+  <div class="section" id="downloadSection">
+    <div class="dl-card">
+      <div class="dl-info">
+        <h3>Export Digitized Data</h3>
+        <p>Download the reconstructed 12-lead signals for further analysis or EHR integration.</p>
+      </div>
+      <div class="dl-buttons">
+        <button class="btn-dl" onclick="downloadCSV()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV
+        </button>
+        <button class="btn-dl" onclick="downloadJSON()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          JSON
+        </button>
+        <button class="btn-dl" onclick="downloadReport()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Report
+        </button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Constants ──
+const LEADS = ['I','II','III','aVR','aVL','aVF','V1','V2','V3','V4','V5','V6'];
+const LEAD_DESC = {I:'Lateral — Left arm vs Right arm',II:'Inferior — Left leg vs Right arm',III:'Inferior — Left leg vs Left arm',aVR:'Augmented — Right arm (inverted)',aVL:'Lateral — Left arm augmented',aVF:'Inferior — Left foot augmented',V1:'Septal — 4th intercostal, right sternal',V2:'Septal — 4th intercostal, left sternal',V3:'Anterior — Between V2 and V4',V4:'Anterior — 5th intercostal, mid-clavicular',V5:'Lateral — Anterior axillary line',V6:'Lateral — Mid-axillary line'};
+const LEAD_NOTES = {I:'Monitors left lateral wall. Useful for identifying high lateral MI and left axis deviation.',II:'Best for rhythm analysis. P waves are most prominent here. Standard monitoring lead.',III:'Inferior wall monitoring. Used with II & aVF for inferior MI detection.',aVR:'Reciprocal lead — inverted relative to I. Useful for right-sided events.',aVL:'High lateral lead. Helps localize high lateral MI alongside lead I.',aVF:'Inferior lead. Part of the inferior triad (II, III, aVF) for inferior wall assessment.',V1:'Septal lead. Best for RBBB detection and P-wave morphology.',V2:'Septal-anterior transition. ST elevation here often indicates anterior STEMI.',V3:'Anterior transition zone. Used with V2 and V4 to assess anterior wall.',V4:'Anterior-lateral transition. R-wave progression should be established here.',V5:'Lateral lead. Monitors lateral wall ischemia; often affected in LCX territory.',V6:'Furthest lateral lead; combined with V5 for lateral MI assessment.'};
+
+let currentResult = null, currentFile = null;
+let modalLeadIdx = 0, modalZoom = 1, modalOffset = 0;
+let modalData = [], modalFs = 500;
+let modalDragging = false, modalDragStart = 0, modalOffsetStart = 0;
+
+// ── API ──
+const apiInput = document.getElementById('apiUrl');
+apiInput.addEventListener('change', checkApi);
+async function checkApi() {
+  try {
+    const r = await fetch(apiInput.value.trim() + '/', {signal:AbortSignal.timeout(3000)});
+    document.getElementById('apiDot').className = r.ok ? 'status-dot on' : 'status-dot';
+    if (r.ok) showToast('Backend connected ✓', false);
+  } catch { document.getElementById('apiDot').className = 'status-dot'; }
+}
+
+// ── Upload ──
+const zone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+zone.addEventListener('click', () => fileInput.click());
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('image/')) loadFile(f); });
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+function loadFile(file) {
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('previewImg');
+    img.src = e.target.result; img.style.display = 'block';
+    document.getElementById('uploadIconWrap').style.display = 'none';
+    document.getElementById('uploadTitle').style.display = 'none';
+    zone.querySelector('.upload-sub').style.display = 'none';
+    zone.classList.add('has-image');
+    const tmp = new Image();
+    tmp.onload = () => { document.getElementById('metaRes').textContent = tmp.width + '×' + tmp.height; };
+    tmp.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  document.getElementById('metaName').textContent = file.name.length > 16 ? file.name.substring(0,14)+'…' : file.name;
+  document.getElementById('metaSize').textContent = (file.size/1024).toFixed(0) + ' KB';
+  document.getElementById('metaStatus').textContent = 'Ready';
+  document.getElementById('btnAnalyze').disabled = false;
+}
+
+// ── Analysis ──
+async function runAnalysis() {
+  const url = apiInput.value.trim();
+  if (!url) { showToast('Please enter backend URL'); return; }
+  if (!currentFile) { showToast('Please upload an ECG image'); return; }
+  const btn = document.getElementById('btnAnalyze');
+  btn.disabled = true; btn.classList.add('loading');
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Analyzing…';
+  showLoading('Running AI inference');
+  const fd = new FormData(); fd.append('file', currentFile);
+  try {
+    const res = await fetch(url + '/digitize', {method:'POST', body:fd});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    currentResult = data;
+    hideLoading();
+    renderAll(data);
+  } catch(e) {
+    hideLoading();
+    showToast('Error: ' + e.message);
+    btn.disabled = false; btn.classList.remove('loading');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Analyze ECG';
+  }
+}
+
+function renderAll(d) {
+  document.getElementById('metaStatus').textContent = 'Done ✓';
+  renderSteps(d.steps);
+  const lastStep = d.steps[d.steps.length - 1];
+  renderCompare(d.steps[0].image, lastStep.image);
+  renderMetrics(d.leads, d.sampling_hz || 500, d.metrics || null);
+  renderWaveforms(d.leads, d.sampling_hz || 500);
+  ['stepsSection','compareSection','metricsSection','waveformSection','downloadSection'].forEach((id,i) => {
+    setTimeout(() => { const el = document.getElementById(id); el.style.display='block'; el.classList.add('fade-in'); el.style.animationDelay = (i*0.08)+'s'; }, i * 80);
+  });
+  setTimeout(() => document.getElementById('stepsSection').scrollIntoView({behavior:'smooth', block:'start'}), 300);
+}
+
+// ── Steps ──
+let stepsData = [];
+function renderSteps(steps) {
+  stepsData = steps;
+  const grid = document.getElementById('stepsGrid'); grid.innerHTML = '';
+  // Skip index 0 (Raw Input Image) — display the remaining 6 steps in 2 rows of 3
+  // Display steps 1–6 (skip index 0 = Raw Input, keep 6 pipeline steps in 2 rows of 3)
+  const display = steps.slice(1);
+  display.forEach((s, di) => {
+    const realIdx = di + 1;
+    const card = document.createElement('div'); card.className = 'step-card';
+    card.onclick = () => openStepLb(realIdx);
+    card.innerHTML = `
+      <div class="step-img-wrap">
+        <img class="step-img" src="${s.image}">
+        <div class="step-badge">Step ${di + 1}</div>
+        <div class="step-expand-hint">Expand ↗</div>
+      </div>
+      <div class="step-body">
+        <div class="step-num">STEP ${String(di+1).padStart(2,'0')} OF ${display.length}</div>
+        <div class="step-title">${s.title}</div>
+        <div class="step-desc">${s.description}</div>
+      </div>`;
+    grid.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), di * 120 + 200);
+  });
+}
+
+// ── Step Lightbox ──
+let lbIdx = 0;
+function openStepLb(idx) {
+  lbIdx = idx;
+  document.getElementById('stepLightbox').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  renderStepLb(null);
+  setupStepLbSwipe();
+}
+function closeStepLb() {
+  document.getElementById('stepLightbox').classList.remove('active');
+  document.body.style.overflow = '';
+}
+function handleStepOverlay(e) { if (e.target === document.getElementById('stepLightbox')) closeStepLb(); }
+
+function setupStepLbSwipe() {
+  const lb = document.getElementById('stepLightbox');
+  if (lb._swipeBound) return;
+  lb._swipeBound = true;
+  let x0 = 0, y0 = 0;
+  lb.addEventListener('touchstart', e => {
+    x0 = e.touches[0].clientX;
+    y0 = e.touches[0].clientY;
+  }, {passive: true});
+  lb.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      dx < 0 ? stepLbNav(1) : stepLbNav(-1);
+    }
+  }, {passive: true});
+}
+
+function stepLbNav(dir) {
+  const next = (lbIdx + dir + stepsData.length) % stepsData.length;
+  const outClass = dir > 0 ? 'slide-out-left' : 'slide-out-right';
+  const inClass  = dir > 0 ? 'slide-in-left'  : 'slide-in-right';
+  const img = document.getElementById('lbImg');
+  // slide out
+  img.classList.remove('slide-active');
+  img.classList.add(outClass);
+  setTimeout(() => {
+    lbIdx = next;
+    renderStepLb(inClass);
+  }, 200);
+}
+
+function renderStepLb(animateInClass) {
+  const s = stepsData[lbIdx];
+  // lbIdx is into stepsData (0=raw); display starts at 1, so Step = lbIdx
+  document.getElementById('lbBadge').textContent = lbIdx === 0 ? 'Raw Input' : `Step ${lbIdx}`;
+  document.getElementById('lbTitle').textContent = s.title;
+  document.getElementById('lbDesc').textContent = s.description;
+  // show "Show Extraction" only on last stage if we have lead data
+  const btn = document.getElementById('btnShowExtract');
+  btn.style.display = (currentResult && lbIdx === stepsData.length - 2) ? 'block' : 'none';
+  // dots
+  const dots = document.getElementById('lbDots'); dots.innerHTML = '';
+  stepsData.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'step-lb-dot' + (i === lbIdx ? ' active' : '');
+    d.onclick = () => { if (i !== lbIdx) stepLbNav(i > lbIdx ? 1 : -1); };
+    dots.appendChild(d);
+  });
+  // image with slide-in animation
+  const img = document.getElementById('lbImg');
+  img.className = 'step-lb-img';
+  if (animateInClass) {
+    img.classList.add(animateInClass);
+    img.src = s.image;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      img.classList.remove(animateInClass);
+      img.classList.add('slide-active');
+    }));
+  } else {
+    img.classList.add('slide-active');
+    img.src = s.image;
+  }
+  hideExtractionPanel();
+}
+
+// ── Extraction Animation ──
+// Standard 12-lead layout: 4 cols × 3 rows
+// col order: I/II/III, aVR/aVL/aVF, V1/V2/V3, V4/V5/V6
+// Animation order: row by row L→R feels natural
+const EXTRACT_LEADS = [
+  { name:'I',   col:0, row:0, color:'#FF3B30' },
+  { name:'aVR', col:1, row:0, color:'#FF9500' },
+  { name:'V1',  col:2, row:0, color:'#FFCC00' },
+  { name:'V4',  col:3, row:0, color:'#30D158' },
+  { name:'II',  col:0, row:1, color:'#00C7BE' },
+  { name:'aVL', col:1, row:1, color:'#007AFF' },
+  { name:'V2',  col:2, row:1, color:'#5856D6' },
+  { name:'V5',  col:3, row:1, color:'#AF52DE' },
+  { name:'III', col:0, row:2, color:'#FF2D55' },
+  { name:'aVF', col:1, row:2, color:'#FF6B6B' },
+  { name:'V3',  col:2, row:2, color:'#32ADE6' },
+  { name:'V6',  col:3, row:2, color:'#4CD964' },
+];
+
+let extractAnimTimer = null;
+
+function showExtractionPanel() {
+  document.getElementById('lbNormalView').style.display = 'none';
+  document.getElementById('extractionPanel').classList.add('active');
+  // Stage 6 (index 5) is the heatmap — the most informative base image for showing extraction regions
+  const heatmapStep = stepsData[stepsData.length - 2];  // heatmap, not the overlay
+  document.getElementById('extractBaseImg').src = heatmapStep ? heatmapStep.image : stepsData[0].image;
+  buildExtractGrid();
+  const baseImg = document.getElementById('extractBaseImg');
+  if (baseImg.complete && baseImg.naturalWidth > 0) {
+    requestAnimationFrame(() => runExtractionAnim());
+  } else {
+    baseImg.onload = () => requestAnimationFrame(() => runExtractionAnim());
+  }
+}
+
+function hideExtractionPanel() {
+  document.getElementById('extractionPanel').classList.remove('active');
+  document.getElementById('lbNormalView').style.display = 'flex';
+  if (extractAnimTimer) { clearTimeout(extractAnimTimer); extractAnimTimer = null; }
+}
+
+function buildExtractGrid() {
+  const right = document.getElementById('extractRight');
+  right.innerHTML = '';
+  EXTRACT_LEADS.forEach(lead => {
+    const card = document.createElement('div');
+    card.className = 'extr-lead-card';
+    card.id = 'extr-' + lead.name;
+    card.innerHTML = `
+      <div class="extr-lead-name" style="color:${lead.color}">${lead.name}</div>
+      <div class="extr-canvas-wrap"><canvas class="extr-canvas" id="extr-cv-${lead.name}"></canvas></div>`;
+    right.appendChild(card);
+  });
+}
+
+function runExtractionAnim() {
+  if (extractAnimTimer) clearTimeout(extractAnimTimer);
+  EXTRACT_LEADS.forEach(l => {
+    const c = document.getElementById('extr-' + l.name);
+    if (c) c.classList.remove('show');
+  });
+  const canvas = document.getElementById('extractCanvas');
+  const ctx    = canvas.getContext('2d');
+  const wrap   = document.getElementById('extractLeft');
+  canvas.width  = wrap.clientWidth  || 400;
+  canvas.height = wrap.clientHeight || 300;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Get the natural size of the base image so we can compute the contain rect
+  const baseImg = document.getElementById('extractBaseImg');
+  const natW = baseImg.naturalWidth  || canvas.width;
+  const natH = baseImg.naturalHeight || canvas.height;
+
+  EXTRACT_LEADS.forEach((lead, i) => {
+    extractAnimTimer = setTimeout(() => {
+      flashLeadBox(lead, ctx, canvas.width, canvas.height, natW, natH);
+      setTimeout(() => {
+        const card = document.getElementById('extr-' + lead.name);
+        if (card) card.classList.add('show');
+        const cv = document.getElementById('extr-cv-' + lead.name);
+        if (cv && currentResult) drawExtrCanvas(cv, currentResult.leads[lead.name] || [], lead.color);
+      }, 180);
+    }, i * 320);
+  });
+}
+
+function getContainRect(imgNatW, imgNatH, canvasW, canvasH) {
+  // Compute the actual rendered rect of an object-fit:contain image inside a canvas
+  const imgRatio = imgNatW / imgNatH;
+  const canRatio = canvasW / canvasH;
+  let rw, rh, rx, ry;
+  if (imgRatio > canRatio) {
+    rw = canvasW;
+    rh = canvasW / imgRatio;
+    rx = 0;
+    ry = (canvasH - rh) / 2;
+  } else {
+    rh = canvasH;
+    rw = canvasH * imgRatio;
+    rx = (canvasW - rw) / 2;
+    ry = 0;
+  }
+  return { rx, ry, rw, rh };
+}
+
+function flashLeadBox(lead, ctx, W, H, imgNatW, imgNatH) {
+  // Map normalized coords to actual image render area (accounting for letterbox)
+  const { rx, ry, rw, rh } = getContainRect(imgNatW, imgNatH, W, H);
+
+  let nx1, ny1, nx2, ny2; // normalized coords in [0,1]
+  if (currentResult && currentResult.lead_boxes && currentResult.lead_boxes[lead.name]) {
+    const b = currentResult.lead_boxes[lead.name];
+    nx1 = b.x1; ny1 = b.y1; nx2 = b.x2; ny2 = b.y2;
+  } else {
+    // fallback: equal-thirds division of the 3-row data area
+    const rowGap = 284, zm0 = 703.5, zm2 = 1271.5, zm3 = 1531.5, imgH = 1696, imgW = 2176;
+    const dataTop = zm0 - rowGap * 0.85;
+    const dataBot = (zm2 + zm3) / 2;     // midpoint between row2 and rhythm strip baseline
+    const rowH    = (dataBot - dataTop) / 3;
+    const leftM = 0.025, colW = 0.245;
+    nx1 = leftM + lead.col * colW;
+    ny1 = (dataTop + lead.row * rowH) / imgH;
+    nx2 = nx1 + colW;
+    ny2 = ny1 + rowH / imgH;
+  }
+
+  // Convert normalized → canvas pixel coords using the actual image render rect
+  const x = rx + nx1 * rw;
+  const y = ry + ny1 * rh;
+  const w = (nx2 - nx1) * rw;
+  const h = (ny2 - ny1) * rh;
+
+  ctx.fillStyle = lead.color + '30';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = lead.color;
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+  const lw = ctx.measureText(lead.name).width + 14;
+  const lh = 18;
+  const rx2 = x + 6, ry2 = y + 6;
+  roundRect(ctx, rx2, ry2, lw, lh, 5);
+  ctx.fillStyle = lead.color; ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 11px DM Sans, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(lead.name, rx2 + 7, ry2 + lh / 2);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function drawExtrCanvas(canvas, data, color) {
+  const W = canvas.offsetWidth || 80;
+  const H = canvas.offsetHeight || 40;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0A1628'; ctx.fillRect(0, 0, W, H);
+  if (!data.length) return;
+  const pts = dsample(data, W);
+  const mn = Math.min(...pts), mx = Math.max(...pts), range = mx - mn || 1;
+  ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  pts.forEach((v, i) => {
+    const x = i, y = H - 2 - ((v - mn) / range * (H - 4));
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+document.addEventListener('keydown', e => {
+  // Step lightbox keys
+  if (document.getElementById('stepLightbox').classList.contains('active')) {
+    if (e.key === 'Escape') closeStepLb();
+    if (e.key === 'ArrowRight') stepLbNav(1);
+    if (e.key === 'ArrowLeft')  stepLbNav(-1);
+    return;
+  }
+  // Lead modal keys
+  if (document.getElementById('modal').classList.contains('active')) {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'ArrowRight') nextLead();
+    if (e.key === 'ArrowLeft') prevLead();
+  }
+});
+
+// ── Compare ──
+function renderCompare(beforeSrc, afterSrc) {
+  const canvas = document.getElementById('compareCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('compareWrap');
+  const imgB = new Image(), imgA = new Image();
+  let split = 0.5, loaded = 0;
+
+  function draw() {
+    const W = wrap.clientWidth || 800;
+    const H = wrap.clientHeight || Math.round(W * 3 / 4);
+    canvas.width = W; canvas.height = H;
+
+    function drawContain(img) {
+      const ir = img.naturalWidth / img.naturalHeight;
+      const cr = W / H;
+      let dw, dh, dx, dy;
+      if (ir > cr) { dw = W; dh = W / ir; dx = 0; dy = (H - dh) / 2; }
+      else          { dh = H; dw = H * ir; dy = 0; dx = (W - dw) / 2; }
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(img, dx, dy, dw, dh);
+    }
+
+    drawContain(imgB);
+    const sx = Math.round(W * split);
+    ctx.save(); ctx.beginPath(); ctx.rect(sx, 0, W - sx, H); ctx.clip();
+    drawContain(imgA);
+    ctx.restore();
+
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, H); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(0,0,0,0.22)'; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(sx, H / 2, 20, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#333'; ctx.font = 'bold 15px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('⟺', sx, H / 2);
+  }
+
+  imgB.onload = imgA.onload = () => { if (++loaded === 2) draw(); };
+  imgB.src = beforeSrc; imgA.src = afterSrc;
+  window.addEventListener('resize', () => { if (loaded === 2) draw(); });
+
+  function clientX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
+  let drag = false;
+  canvas.addEventListener('mousedown',  () => drag = true);
+  canvas.addEventListener('touchstart', () => drag = true, {passive:true});
+  document.addEventListener('mousemove', e => {
+    if (!drag) return;
+    split = Math.max(0.04, Math.min(0.96, (clientX(e) - canvas.getBoundingClientRect().left) / canvas.clientWidth));
+    draw();
+  });
+  document.addEventListener('touchmove', e => {
+    if (!drag) return;
+    split = Math.max(0.04, Math.min(0.96, (clientX(e) - canvas.getBoundingClientRect().left) / canvas.clientWidth));
+    draw();
+  }, {passive:true});
+  document.addEventListener('mouseup',  () => drag = false);
+  document.addEventListener('touchend', () => drag = false);
+}
+
+// ── Metrics ──
+function renderMetrics(leads, fs, metrics) {
+  const ii = leads['II'] || leads['I'] || [];
+
+  // Prefer backend-computed values (scipy.signal.find_peaks, adaptive threshold, median RR)
+  // Fall back to the JS implementation only if backend didn't return metrics
+  const hr  = (metrics && metrics.hr_bpm  != null) ? Math.round(metrics.hr_bpm)  : (() => { const p = findRPeaks(ii, fs); return computeHR(p, fs); })();
+  const rr  = (metrics && metrics.rr_ms   != null) ? Math.round(metrics.rr_ms)   : (hr > 0 ? Math.round(60000 / hr) : 0);
+  const qrs = (metrics && metrics.qrs_ms  != null) ? Math.round(metrics.qrs_ms)  : computeQRS(ii, fs);
+  const snr = computeQuality(ii);  // signal quality is frontend-only
+
+  animateVal('metHR', hr);
+  animateVal('metRR', rr);
+  animateVal('metQRS', qrs);
+  animateVal('metSNR', snr);
+
+  setTimeout(() => {
+    document.getElementById('barHR').style.width  = Math.min(100, hr / 180 * 100) + '%';
+    document.getElementById('barRR').style.width  = Math.min(100, (2000 - rr) / 1600 * 100) + '%';
+    document.getElementById('barQRS').style.width = Math.min(100, qrs / 160 * 100) + '%';
+    document.getElementById('barSNR').style.width = snr + '%';
+  }, 400);
+}
+
+// ── Waveforms ──
+function renderWaveforms(leads, fs) {
+  const grid = document.getElementById('waveformGrid'); grid.innerHTML = '';
+  LEADS.forEach(name => {
+    const data = leads[name] || [];
+    const card = document.createElement('div'); card.className = 'lead-card';
+    card.onclick = () => openModal(name);
+    card.innerHTML = `<div class="lead-header"><span class="lead-name">${name}</span><span class="lead-expand">Expand ↗</span></div><div class="lead-canvas-wrap"><canvas class="lead-canvas" height="72"></canvas></div>`;
+    grid.appendChild(card);
+    const canvas = card.querySelector('canvas');
+    requestAnimationFrame(() => drawThumb(canvas, data, '#30D158', 72));
+  });
+  const rc = document.getElementById('rhythmCanvas');
+  rc.style.height = '68px';
+  requestAnimationFrame(() => drawThumb(rc, leads['II'] || leads['I'] || [], '#007AFF', 68));
+}
+
+function drawThumb(canvas, data, color, h) {
+  const W = canvas.offsetWidth || 260; canvas.width = W; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  drawGrid(ctx, W, h, 0.25);
+  if (!data.length) return;
+  const pts = dsample(data, W);
+  const mn = Math.min(...pts), mx = Math.max(...pts), range = mx-mn||1;
+  ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.4;
+  pts.forEach((v,i) => { const y = h-4-((v-mn)/range*(h-10)); i===0?ctx.moveTo(i,y):ctx.lineTo(i,y); });
+  ctx.stroke();
+}
+
+// ── Modal ──
+function openModal(name) {
+  if (!currentResult) return;
+  modalLeadIdx = LEADS.indexOf(name); if (modalLeadIdx < 0) modalLeadIdx = 0;
+  modalZoom = 1; modalOffset = 0;
+  document.getElementById('modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  renderModal();
+}
+function closeModal() { document.getElementById('modal').classList.remove('active'); document.body.style.overflow = ''; }
+function handleOverlayClick(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+function prevLead() { modalLeadIdx = (modalLeadIdx-1+LEADS.length)%LEADS.length; modalOffset=0; renderModal(); }
+function nextLead() { modalLeadIdx = (modalLeadIdx+1)%LEADS.length; modalOffset=0; renderModal(); }
+
+function renderModal() {
+  const name = LEADS[modalLeadIdx];
+  modalData = currentResult.leads[name] || [];
+  modalFs = currentResult.sampling_hz || 500;
+  document.getElementById('modalBadge').textContent = name;
+  document.getElementById('modalLeadName').textContent = 'Lead ' + name;
+  document.getElementById('modalLeadDesc').textContent = LEAD_DESC[name] || '';
+  document.getElementById('clinicalNote').textContent = LEAD_NOTES[name] || '';
+  if (modalData.length) {
+    const max=Math.max(...modalData), min=Math.min(...modalData);
+    const base=modalData.reduce((a,b)=>a+b,0)/modalData.length;
+
+    // Use backend metrics for HR/RR/QRS (Lead II rhythm strip, scipy peak detection)
+    // Fall back to JS computation for individual lead modal views where backend won't have per-lead metrics
+    const m = currentResult && currentResult.metrics;
+    const peaks = findRPeaks(modalData, modalFs);
+    const hrJS  = computeHR(peaks, modalFs);
+    const hr    = (m && m.hr_bpm  != null) ? Math.round(m.hr_bpm)  : hrJS;
+    const rr    = (m && m.rr_ms   != null) ? Math.round(m.rr_ms)   : (hrJS > 0 ? Math.round(60000 / hrJS) : 0);
+    const qrs   = (m && m.qrs_ms  != null) ? Math.round(m.qrs_ms)  : computeQRS(modalData, modalFs);
+
+    // RR variability still computed locally from this lead's peaks
+    const rrs = peaks.length > 1 ? peaks.slice(1).map((p,i) => (p - peaks[i]) / modalFs * 1000) : [];
+    const rrMean = rrs.length ? rrs.reduce((a,b) => a+b, 0) / rrs.length : rr;
+    const rrv = rrs.length > 1 ? Math.sqrt(rrs.map(r => (r-rrMean)**2).reduce((a,b) => a+b, 0) / rrs.length) : 0;
+
+    setText('statMax', max.toFixed(3)); setText('statMin', min.toFixed(3)); setText('statBase', base.toFixed(3));
+    setText('statDur', (modalData.length / modalFs).toFixed(1)); setText('statSamples', modalData.length);
+    setText('statHR', hr || '—'); setText('statRR', rr || '—');
+    setText('statRRV', Math.round(rrv) || '—'); setText('statPeaks', peaks.length); setText('statQRS', qrs);
+
+    const hb = document.getElementById('badgeHR');
+    if(hr < 60){hb.textContent='Brady'; hb.className='badge badge-warn';}
+    else if(hr > 100){hb.textContent='Tachy'; hb.className='badge badge-alert';}
+    else{hb.textContent='Normal'; hb.className='badge badge-normal';}
+    const qb = document.getElementById('badgeQRS');
+    if(qrs > 120){qb.textContent='Wide'; qb.className='badge badge-alert';}
+    else{qb.textContent='Normal'; qb.className='badge badge-normal';}
+  }
+  updateZoomLabel(); drawModalCanvas(); drawMiniCanvas(); setupModalEvents(); setupMiniScrub();
+}
+
+function drawModalCanvas() {
+  const wrap=document.getElementById('modalCanvasWrap');
+  const canvas=document.getElementById('modalCanvas');
+  const W=wrap.clientWidth||800, H=wrap.clientHeight||300;
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  drawGrid(ctx,W,H,1);
+  if(!modalData.length) return;
+  const total=modalData.length, vis=Math.round(total/modalZoom);
+  const start=Math.max(0,Math.min(total-vis,modalOffset)), end=Math.min(total,start+vis);
+  const slice=modalData.slice(start,end);
+  const mn=Math.min(...slice), mx=Math.max(...slice);
+  const pad=(mx-mn)*0.15||0.1, vMin=mn-pad, vMax=mx+pad, range=vMax-vMin;
+  const toY=v=>H-6-((v-vMin)/range*(H-12));
+  const toX=i=>(i/slice.length)*W;
+  const peaks=findRPeaks(modalData,modalFs);
+  const vPeaks=peaks.filter(p=>p>=start&&p<end).map(p=>p-start);
+  // P-wave shade
+  ctx.fillStyle='rgba(255,149,0,0.04)';
+  vPeaks.forEach(rp=>{
+    const ps=Math.max(0,rp-Math.round(modalFs*0.2)), pe=Math.max(0,rp-Math.round(modalFs*0.05));
+    ctx.fillRect(toX(ps),0,toX(pe)-toX(ps),H);
+  });
+  // waveform
+  ctx.beginPath(); ctx.strokeStyle='#30D158'; ctx.lineWidth=2;
+  slice.forEach((v,i)=>{ const x=toX(i),y=toY(v); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.stroke();
+  // R-peaks
+  vPeaks.forEach(rp=>{
+    const x=toX(rp), y=toY(slice[rp]||0);
+    ctx.beginPath(); ctx.strokeStyle='rgba(255,59,48,0.25)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fillStyle='#FF3B30'; ctx.fill();
+    ctx.fillStyle='rgba(255,59,48,0.8)'; ctx.font='bold 9px DM Sans,sans-serif'; ctx.fillText('R',x+7,y-7);
+  });
+  // time axis
+  const ax=document.getElementById('axisX'); ax.innerHTML='';
+  for(let i=0;i<=6;i++){
+    const si=start+Math.round((i/6)*(end-start));
+    const sp=document.createElement('span'); sp.className='time-tick';
+    sp.textContent=(si/modalFs).toFixed(2)+'s'; ax.appendChild(sp);
+  }
+  updateMiniVP(start,end,total);
+}
+
+function drawGrid(ctx,W,H,alpha) {
+  ctx.fillStyle='#0A1628'; ctx.fillRect(0,0,W,H);
+  const s=8,b=40;
+  ctx.strokeStyle=`rgba(30,100,60,${alpha*0.35})`; ctx.lineWidth=0.5;
+  for(let x=0;x<W;x+=s){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=s){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.strokeStyle=`rgba(40,140,80,${alpha*0.55})`; ctx.lineWidth=0.8;
+  for(let x=0;x<W;x+=b){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=b){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+}
+
+function drawMiniCanvas() {
+  const canvas=document.getElementById('miniCanvas');
+  const W=canvas.offsetWidth||270; canvas.width=W; canvas.height=54;
+  const ctx=canvas.getContext('2d');
+  drawGrid(ctx,W,54,0.3);
+  if(!modalData.length) return;
+  const pts=dsample(modalData,W), mn=Math.min(...pts), mx=Math.max(...pts), range=mx-mn||1;
+  ctx.beginPath(); ctx.strokeStyle='#30D158'; ctx.lineWidth=1;
+  pts.forEach((v,i)=>{ const y=54-3-((v-mn)/range*48); i===0?ctx.moveTo(i,y):ctx.lineTo(i,y); });
+  ctx.stroke();
+}
+
+function updateMiniVP(start,end,total) {
+  const vp=document.getElementById('miniViewport'), mini=document.getElementById('miniCanvas');
+  const W=mini.offsetWidth||270;
+  vp.style.left=(start/total*W)+'px'; vp.style.width=((end-start)/total*W)+'px';
+}
+
+// ── Mini overview scrub (drag blue viewport region or click anywhere on minimap) ──
+function setupMiniScrub() {
+  const wrap = document.getElementById('miniWrap');
+  if (!wrap || wrap._scrubBound) return;
+  wrap._scrubBound = true;
+
+  function scrubTo(clientX) {
+    const rect = wrap.getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const vis  = Math.round(modalData.length / modalZoom);
+    modalOffset = Math.max(0, Math.min(modalData.length - vis, Math.round(frac * modalData.length - vis / 2)));
+    drawModalCanvas();
+  }
+
+  let scrubbing = false;
+  wrap.addEventListener('mousedown',  e => { scrubbing = true; scrubTo(e.clientX); });
+  document.addEventListener('mousemove', e => { if (scrubbing) scrubTo(e.clientX); });
+  document.addEventListener('mouseup',   () => { scrubbing = false; });
+
+  wrap.addEventListener('touchstart',  e => { scrubbing = true; scrubTo(e.touches[0].clientX); }, {passive:true});
+  wrap.addEventListener('touchmove',   e => { if (scrubbing) { e.preventDefault(); scrubTo(e.touches[0].clientX); } }, {passive:false});
+  wrap.addEventListener('touchend',    () => { scrubbing = false; });
+}
+
+// ── Zoom / pan ──
+function zoom(dir) {
+  const lvls=[1,1.5,2,3,5,8,12];
+  let idx=lvls.findIndex(l=>Math.abs(l-modalZoom)<0.01);
+  modalZoom=lvls[Math.max(0,Math.min(lvls.length-1,idx+dir))];
+  updateZoomLabel(); drawModalCanvas();
+}
+function updateZoomLabel(){document.getElementById('zoomLevel').textContent=modalZoom+'×';}
+
+function setupModalEvents() {
+  const wrap = document.getElementById('modalCanvasWrap');
+  const fresh = wrap.cloneNode(false);
+  fresh.appendChild(document.getElementById('modalCanvas'));
+  wrap.parentNode.replaceChild(fresh, wrap);
+
+  // ── wheel zoom ──
+  fresh.addEventListener('wheel', e => {
+    e.preventDefault();
+    zoom(e.deltaY < 0 ? 1 : -1);
+  }, {passive: false});
+
+  // ── mouse pan ──
+  fresh.addEventListener('mousedown', e => {
+    modalDragging = true;
+    modalDragStart = e.clientX;
+    modalOffsetStart = modalOffset;
+    fresh.classList.add('grabbing');
+  });
+  document.addEventListener('mousemove', e => {
+    if (!modalDragging) return;
+    const W = fresh.clientWidth || 800;
+    const vis = Math.round(modalData.length / modalZoom);
+    modalOffset = Math.max(0, Math.min(modalData.length - vis,
+      modalOffsetStart - Math.round((e.clientX - modalDragStart) / W * vis)));
+    drawModalCanvas();
+    document.getElementById('cursorInfo').textContent = (modalOffset / modalFs).toFixed(2) + 's';
+  });
+  document.addEventListener('mouseup', () => {
+    if (modalDragging) { modalDragging = false; fresh.classList.remove('grabbing'); }
+  });
+
+  // ── touch: single-finger pan, two-finger pinch zoom ──
+  let t0x = 0, t0offset = 0, pinchDist0 = 0, pinchZoom0 = 1;
+  fresh.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      t0x = e.touches[0].clientX;
+      t0offset = modalOffset;
+    } else if (e.touches.length === 2) {
+      pinchDist0 = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchZoom0 = modalZoom;
+    }
+  }, {passive: true});
+
+    fresh.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      const dx = e.touches[0].clientX - t0x;
+      const W = fresh.clientWidth || 800;
+      const vis = Math.round(modalData.length / modalZoom);
+      modalOffset = Math.max(0, Math.min(modalData.length - vis,
+        t0offset - Math.round(dx / W * vis)));
+      drawModalCanvas();
+    } else if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = dist / (pinchDist0 || 1);
+      const levels = [1, 1.5, 2, 3, 5, 8, 12];
+      const targetZoom = pinchZoom0 * ratio;
+      // find closest level
+      let best = levels[0];
+      levels.forEach(l => { if (Math.abs(l - targetZoom) < Math.abs(best - targetZoom)) best = l; });
+      if (best !== modalZoom) { modalZoom = best; updateZoomLabel(); drawModalCanvas(); }
+    }
+  }, {passive: false});
+}
+
+// ── Signal processing ──
+function findRPeaks(signal,fs){
+  if(!signal.length) return [];
+  const mx=Math.max(...signal), thr=mx*0.55, md=Math.round(fs*0.35);
+  const peaks=[]; let last=-md;
+  for(let i=1;i<signal.length-1;i++)
+    if(signal[i]>thr&&signal[i]>=signal[i-1]&&signal[i]>=signal[i+1]&&i-last>md){peaks.push(i);last=i;}
+  return peaks;
+}
+function computeHR(peaks,fs){if(peaks.length<2) return 72; return Math.round(60/((peaks[peaks.length-1]-peaks[0])/(peaks.length-1)/fs));}
+function computeQRS(signal,fs){
+  const mx=Math.max(...signal), thr=mx*0.5; let start=-1;
+  for(let i=0;i<Math.min(signal.length,fs*4);i++){
+    if(start<0&&signal[i]>thr) start=i;
+    else if(start>=0&&signal[i]<=thr) return Math.round((i-start)/fs*1000);
+  }
+  return 92;
+}
+function computeQuality(sig){const m=sig.reduce((a,b)=>a+b,0)/sig.length,v=sig.reduce((a,b)=>a+(b-m)**2,0)/sig.length;return Math.min(99,Math.max(55,Math.round(10*Math.log10(v/0.001+1)*3)));}
+function dsample(data,n){const s=data.length/n;return Array.from({length:n},(_,i)=>data[Math.min(data.length-1,Math.round(i*s))]);}
+
+// ── Download ──
+function downloadCSV(){if(!currentResult) return;const h=LEADS.join(',')+'\n',mx=Math.max(...LEADS.map(l=>(currentResult.leads[l]||[]).length));let r='';for(let i=0;i<mx;i++)r+=LEADS.map(l=>(currentResult.leads[l]||[])[i]!=null?currentResult.leads[l][i].toFixed(4):'').join(',')+'\n';save(h+r,'ecg_digitized.csv','text/csv');}
+function downloadJSON(){if(!currentResult) return;save(JSON.stringify(currentResult.leads,null,2),'ecg_digitized.json','application/json');}
+function downloadReport(){if(!currentResult) return;const g=id=>document.getElementById(id).textContent;save(`ECG DIGITIZATION REPORT\n${'─'.repeat(40)}\nHeart Rate:     ${g('metHR')} bpm\nRR Interval:    ${g('metRR')} ms\nQRS Duration:   ${g('metQRS')} ms\nSignal Quality: ${g('metSNR')} %\nSampling Rate:  ${currentResult.sampling_hz} Hz\nLeads:          12-lead standard\n${'─'.repeat(40)}\nGenerated by CardioScan AI\n`,'ecg_report.txt','text/plain');}
+function save(c,n,t){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click();}
+
+// ── Helpers ──
+function setText(id,v){document.getElementById(id).textContent=v;}
+function animateVal(id,target){const el=document.getElementById(id);let c=0;const s=target/30;const t=setInterval(()=>{c=Math.min(target,c+s);el.textContent=Math.round(c);if(c>=target)clearInterval(t);},30);}
+function showLoading(msg){document.getElementById('loadingOverlay').classList.add('active');document.getElementById('loadingStage').innerHTML=msg+'<span>...</span>';}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('active');}
+function showToast(msg,err=true){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(err?'err':'ok');setTimeout(()=>t.className='toast',3000);}
+</script>
+</body>
+</html>
