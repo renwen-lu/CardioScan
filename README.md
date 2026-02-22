@@ -35,7 +35,7 @@ The third network is a ResNet-34 encoder paired with a coordinate-aware UNet dec
 
 ECG images in the real world vary dramatically in their visual characteristics depending on the recording machine, paper type, scanner settings, and photographic conditions. A single preprocessing pipeline that works well for a cleanly scanned hospital ECG will degrade results on a smartphone photograph taken under uneven lighting.
 
-We trained an EfficientNet-B5 classifier on labeled examples from 12 distinct source categories, achieving a macro-averaged AUC of 99.8% on held-out validation data. At inference time, each image is first classified by source. The predicted category selects a tailored preprocessing branch — combinations of CLAHE contrast enhancement, gray-world white balance, bilateral denoising, median filtering, and morphological background correction applied in LAB color space. Both the preprocessed image and the original are run through Stages 0 and 1, and the result with the higher quality score (a weighted combination of edge density and gradient anisotropy) is selected for Stage 2.
+We trained an EfficientNet-B5 classifier on labeled examples from 12 distinct source categories. At inference time, each image is first classified by source. The predicted category selects a tailored preprocessing branch — combinations of CLAHE contrast enhancement, gray-world white balance, bilateral denoising, median filtering, and morphological background correction applied in LAB color space. Both the preprocessed image and the original are run through Stages 0 and 1, and the result with the higher quality score (a weighted combination of edge density and gradient anisotropy) is selected for Stage 2.
 
 ---
 
