@@ -1,4 +1,4 @@
-# CardioScan — AI-Powered ECG Digitization
+CardioScan — ECG Digitization with ResNet-UNet Waveform Extraction
 
 Millions of electrocardiograms recorded over the past several decades exist only as paper printouts or scanned images, locked away in filing cabinets and hospital archives. They cannot be searched, compared, or fed into modern diagnostic algorithms. CardioScan converts a photograph or scan of any standard 12-lead ECG into calibrated digital time-series signals — making those records computationally accessible for the first time.
 
